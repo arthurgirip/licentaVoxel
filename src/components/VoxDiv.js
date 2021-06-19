@@ -3,6 +3,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import VoxelWorld from '../classes/VoxelWorld'
 
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+
 var renderRequested = false;
 var cellSize = 64;
 
@@ -17,10 +19,14 @@ var canvas = renderer.domElement;
 var camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 camera.position.set(-cellSize * .3, cellSize * .8, -cellSize * .3);
 
+var controls = new OrbitControls(camera, canvas);
+
 var scene = new THREE.Scene()
 
 var geometry = new THREE.BufferGeometry();
-var material = new THREE.MeshLambertMaterial({color: 'green'});
+
+
+
 
 function addLight(x, y, z) {
     const color = 0xFFFFFF;
@@ -31,7 +37,6 @@ function addLight(x, y, z) {
 }
 
 function resizeRendererToDisplaySize(renderer) {
-    
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
     const needResize = canvas.width !== width || canvas.height !== height;
@@ -56,6 +61,8 @@ function render1() {
     //   camera.updateProjectionMatrix();
     // }
 
+    controls.update();
+
     renderer.render(scene, camera);
 }
 
@@ -76,35 +83,66 @@ class VoxDiv extends React.Component {
         
         scene.background = new THREE.Color('lightblue');
 
+        const loader = new THREE.TextureLoader();
+        const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/minecraft/flourish-cc-by-nc-sa.png', render1);
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.NearestFilter;
+
         
 
-        var world = new VoxelWorld(cellSize);
+        const tileSize = 16;
+        const tileTextureWidth = 256;
+        const tileTextureHeight = 64;
+
+        const world = new VoxelWorld({
+            cellSize,
+            tileSize,
+            tileTextureWidth,
+            tileTextureHeight,
+        });
 
         for (let y = 0; y < cellSize; ++y) {
             for (let z = 0; z < cellSize; ++z) {
                 for (let x = 0; x < cellSize; ++x) {
-                    const height = (Math.cos(x / cellSize * Math.PI * 2) + Math.cos(z / cellSize * Math.PI * 3)) * (cellSize / 6) + (cellSize / 2);
+                    const height = (Math.sin(x / cellSize * Math.PI * 2) + Math.sin(z / cellSize * Math.PI * 3)) * (cellSize / 6) + (cellSize / 2);
                     if (y < height) {
-                        world.setVoxel(x, y, z, 1);
+                        world.setVoxel(x, y, z, y%17+1);
                     }
                 }
             }
         }
 
-        const {positions, normals, indices} = world.generateGeometryDataForCell(0, 0, 0);
-        
+        const {positions, normals, uvs, indices} = world.generateGeometryDataForCell(0, 0, 0);
+        var material = new THREE.MeshLambertMaterial({
+            map: texture,
+            side: THREE.DoubleSide,
+            alphaTest: 0.1,
+            transparent: false,
+        });
+
+        this.material = material
     
         const positionNumComponents = 3;
         const normalNumComponents = 3;
+        const uvNumComponents = 2;
+
         geometry.setAttribute(
             'position',
             new THREE.BufferAttribute(new Float32Array(positions), positionNumComponents));
         geometry.setAttribute(
             'normal',
             new THREE.BufferAttribute(new Float32Array(normals), normalNumComponents));
+        geometry.setAttribute(
+            'uv',
+            new THREE.BufferAttribute(new Float32Array(uvs), uvNumComponents));
         geometry.setIndex(indices);
         const mesh = new THREE.Mesh(geometry, material);
         camera.position.z = 150
+
+
+        
+        controls.target.set(cellSize / 2, cellSize / 3, cellSize / 2);
+        controls.update();
         scene.add(mesh);
 
         addLight(-1,  2,  4);
@@ -115,19 +153,11 @@ class VoxDiv extends React.Component {
         this.scene = scene
         this.camera = camera
         this.renderer = renderer
-        this.material = material
         this.mesh = mesh
-
-        console.log("VoxDiv")
-        console.log(this.scene)
-        console.log(this.camera)
-        console.log(this.renderer)
-        console.log(this.material)
 
         render1();
 
-        console.log(this.renderer.domElement)
-  
+        controls.addEventListener('change', requestRenderIfNotRequested);
         
         this.mount.appendChild(this.renderer.domElement)
         this.start();
@@ -150,8 +180,6 @@ class VoxDiv extends React.Component {
 
 
     animate() {
-        this.mesh.rotation.y += 0.01
-
         this.renderScene()
         this.frameId = window.requestAnimationFrame(this.animate)
     }
