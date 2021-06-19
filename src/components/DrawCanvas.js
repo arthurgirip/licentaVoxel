@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-class VoxelCanvas extends React.Component {
+class DrawCanvas extends React.Component {
     constructor(props) {
       super(props)
   
@@ -79,13 +79,13 @@ class VoxelCanvas extends React.Component {
     render() {
       return (
         <div id="drawCanvas"
-          style={{ width: '1024px', height: '576px' }}
+          style={{ width: '576px', height: '576px' }}
           ref={(mount) => { this.mount = mount }}
         />
       )
     }
   }
   
-  export default VoxelCanvas;
+  export default DrawCanvas;
 
   //ReactDOM.render(<Scene />, document.getElementById('root'))
