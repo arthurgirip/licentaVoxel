@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 import VoxelWorld from '../classes/VoxelWorld'
 
 var renderRequested = false;
-var cellSize = 32;
+var cellSize = 64;
 
 var fov = 75;
 var aspect = 2;  // the canvas default
@@ -83,7 +83,7 @@ class VoxDiv extends React.Component {
         for (let y = 0; y < cellSize; ++y) {
             for (let z = 0; z < cellSize; ++z) {
                 for (let x = 0; x < cellSize; ++x) {
-                    const height = (Math.sin(x / cellSize * Math.PI * 2) + Math.sin(z / cellSize * Math.PI * 3)) * (cellSize / 6) + (cellSize / 2);
+                    const height = (Math.cos(x / cellSize * Math.PI * 2) + Math.cos(z / cellSize * Math.PI * 3)) * (cellSize / 6) + (cellSize / 2);
                     if (y < height) {
                         world.setVoxel(x, y, z, 1);
                     }
@@ -104,7 +104,7 @@ class VoxDiv extends React.Component {
             new THREE.BufferAttribute(new Float32Array(normals), normalNumComponents));
         geometry.setIndex(indices);
         const mesh = new THREE.Mesh(geometry, material);
-        camera.position.z = 100
+        camera.position.z = 150
         scene.add(mesh);
 
         addLight(-1,  2,  4);
@@ -148,7 +148,9 @@ class VoxDiv extends React.Component {
         cancelAnimationFrame(this.frameId)
     }
 
+
     animate() {
+        this.mesh.rotation.y += 0.01
 
         this.renderScene()
         this.frameId = window.requestAnimationFrame(this.animate)
@@ -160,8 +162,8 @@ class VoxDiv extends React.Component {
   
     render() {
       return (
-        <div
-          style={{ width: '400px', height: '400px' }}
+        <div id="voxelCanvas"
+          style={{ width: '1024px', height: '576px' }}
           ref={(mount) => { this.mount = mount }}
         />
       )

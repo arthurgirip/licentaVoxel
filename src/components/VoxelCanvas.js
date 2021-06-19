@@ -78,8 +78,8 @@ class VoxelCanvas extends React.Component {
   
     render() {
       return (
-        <div
-          style={{ width: '400px', height: '400px' }}
+        <div id="drawCanvas"
+          style={{ width: '1024px', height: '576px' }}
           ref={(mount) => { this.mount = mount }}
         />
       )
