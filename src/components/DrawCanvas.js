@@ -37,14 +37,6 @@ class DrawCanvas extends React.Component {
       this.renderer = renderer
       this.material = material
       this.cube = cube
-
-      console.log("VoxelCanvas")
-      console.log(this.scene)
-      console.log(this.camera)
-      console.log(this.renderer)
-      console.log(this.material)
-      console.log(this.renderer.domElement)
-  
       this.mount.appendChild(this.renderer.domElement)
       this.start()
     }

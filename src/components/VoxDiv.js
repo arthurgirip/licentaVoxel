@@ -6,7 +6,7 @@ import VoxelWorld from '../classes/VoxelWorld'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 var renderRequested = false;
-var cellSize = 64;
+var cellSize = 128;
 
 var fov = 75;
 var aspect = 2;  // the canvas default
@@ -24,6 +24,9 @@ var controls = new OrbitControls(camera, canvas);
 var scene = new THREE.Scene()
 
 var geometry = new THREE.BufferGeometry();
+
+
+///PARAMETERS
 
 
 
@@ -66,6 +69,37 @@ function render1() {
     renderer.render(scene, camera);
 }
 
+//get data from heightmap
+function getHeightData(img,scale) {
+     
+    if (scale == undefined) scale=1;
+    
+       var canvas = document.createElement( 'canvas' );
+       canvas.width = img.width;
+       canvas.height = img.height;
+       var context = canvas.getContext( '2d' );
+
+       var size = img.width * img.height;
+       var data = new Float32Array( size );
+
+       context.drawImage(img,0,0);
+
+       for ( var i = 0; i < size; i ++ ) {
+           data[i] = 0
+       }
+
+       var imgd = context.getImageData(0, 0, img.width, img.height);
+       var pix = imgd.data;
+
+       var j=0;
+       for (var i = 0; i<pix.length; i +=4) {
+           var all = pix[i]+pix[i+1]+pix[i+2];
+           data[j++] = all/(12*scale);
+       }
+       
+       return data;
+}
+
 class VoxDiv extends React.Component {
     constructor(props) {
       super(props)
@@ -105,8 +139,8 @@ class VoxDiv extends React.Component {
             for (let z = 0; z < cellSize; ++z) {
                 for (let x = 0; x < cellSize; ++x) {
                     const height = (Math.sin(x / cellSize * Math.PI * 2) + Math.sin(z / cellSize * Math.PI * 3)) * (cellSize / 6) + (cellSize / 2);
-                    if (y < height) {
-                        world.setVoxel(x, y, z, y%17+1);
+                    if (Math.floor(Math.random()*256) > 128) {
+                        world.setVoxel(Math.floor(Math.random()*256), y, Math.floor(Math.random()*256), y%17+1);
                     }
                 }
             }
