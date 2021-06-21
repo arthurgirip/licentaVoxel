@@ -13,6 +13,7 @@ class Dashboard extends React.Component {
     
     loadImage = (importedFile)=>{
         this.setState({imgFile : importedFile})
+        console.log("loaded image")
     }
   
     render() {

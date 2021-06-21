@@ -4,9 +4,10 @@ import ReactDOM from 'react-dom';
 import VoxelWorld from '../classes/VoxelWorld'
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { wait } from '@testing-library/react';
 
 var renderRequested = false;
-var cellSize = 128;
+var cellSize = 34;
 
 var fov = 75;
 var aspect = 2;  // the canvas default
@@ -25,10 +26,12 @@ var scene = new THREE.Scene()
 
 var geometry = new THREE.BufferGeometry();
 
+var image = new Image();
+var heightmapData = new Float32Array();
+
+var world;
 
 ///PARAMETERS
-
-
 
 
 function addLight(x, y, z) {
@@ -74,30 +77,35 @@ function getHeightData(img,scale) {
      
     if (scale == undefined) scale=1;
     
-       var canvas = document.createElement( 'canvas' );
-       canvas.width = img.width;
-       canvas.height = img.height;
-       var context = canvas.getContext( '2d' );
+    if(img == undefined) return null;
 
-       var size = img.width * img.height;
-       var data = new Float32Array( size );
+    var canvas = document.createElement( 'canvas' );
+    canvas.width = img.width;
+    canvas.height = img.height;
+    var context = canvas.getContext( '2d' );
 
-       context.drawImage(img,0,0);
+    var size = img.width * img.height;
+    var data = new Uint32Array( size );
 
-       for ( var i = 0; i < size; i ++ ) {
-           data[i] = 0
-       }
+    console.log(img)
+    console.log(img.width)
+    console.log(img.height)
+    context.drawImage(img,0,0);
 
-       var imgd = context.getImageData(0, 0, img.width, img.height);
-       var pix = imgd.data;
+    for ( var i = 0; i < size; i ++ ) {
+        data[i] = 0
+    }
 
-       var j=0;
-       for (var i = 0; i<pix.length; i +=4) {
-           var all = pix[i]+pix[i+1]+pix[i+2];
-           data[j++] = all/(12*scale);
-       }
-       
-       return data;
+    var imgd = context.getImageData(0, 0, img.width, img.height);
+    var pix = imgd.data;
+
+    var j=0;
+    for (var i = 0; i<pix.length; i +=4) {
+        var all = pix[i]+pix[i+1]+pix[i+2];
+        data[j++] = all/3;
+    }
+    
+    return data;
 }
 
 class VoxDiv extends React.Component {
@@ -108,8 +116,24 @@ class VoxDiv extends React.Component {
       this.stop = this.stop.bind(this)
       this.animate = this.animate.bind(this)
     }
-  
-    componentDidMount() {
+
+    loadHeightmapData(){
+        image.setAttribute("src",URL.createObjectURL(this.props.imgFromImport));
+        var newImg = image;
+        setTimeout(() => {  heightmapData = getHeightData(newImg,1); console.log(heightmapData) }, 100);
+        setTimeout(() => {  cellSize=newImg.height; this.generateWorld() }, 1000);
+    }
+
+    componentDidUpdate() {
+        if(this.props.imgFromImport)
+        {
+            this.loadHeightmapData()
+            
+        }
+            
+    }
+
+    generateWorld(){
         const width = this.mount.clientWidth
         const height = this.mount.clientHeight
         renderer.setSize(width, height)
@@ -122,13 +146,11 @@ class VoxDiv extends React.Component {
         texture.magFilter = THREE.NearestFilter;
         texture.minFilter = THREE.NearestFilter;
 
-        
-
         const tileSize = 16;
         const tileTextureWidth = 256;
         const tileTextureHeight = 64;
 
-        const world = new VoxelWorld({
+        world = new VoxelWorld({
             cellSize,
             tileSize,
             tileTextureWidth,
@@ -138,9 +160,10 @@ class VoxDiv extends React.Component {
         for (let y = 0; y < cellSize; ++y) {
             for (let z = 0; z < cellSize; ++z) {
                 for (let x = 0; x < cellSize; ++x) {
-                    const height = (Math.sin(x / cellSize * Math.PI * 2) + Math.sin(z / cellSize * Math.PI * 3)) * (cellSize / 6) + (cellSize / 2);
-                    if (Math.floor(Math.random()*256) > 128) {
-                        world.setVoxel(Math.floor(Math.random()*256), y, Math.floor(Math.random()*256), y%17+1);
+                    const height = heightmapData[x + z*cellSize]%cellSize;
+                    
+                    if (y < height) {
+                        world.setVoxel(x, y-(cellSize - 30), z, y%17+1);
                     }
                 }
             }
@@ -194,6 +217,17 @@ class VoxDiv extends React.Component {
         controls.addEventListener('change', requestRenderIfNotRequested);
         
         this.mount.appendChild(this.renderer.domElement)
+        
+
+    }
+  
+    componentDidMount() {
+        
+
+        
+
+        this.generateWorld();
+
         this.start();
     }
 
